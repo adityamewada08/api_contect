@@ -1,29 +1,49 @@
 import express from "express";
 import jwt from "jsonwebtoken";
- 
+import { User } from "./../model/user.js";   // added missing import
 
 
-export const isAuthenticate = async(req ,res , next)=>{
+export const isAuthenticate = async (req, res, next) => {
 
-    const token = req.header('Auth');
+    const authHeader = req.header("Authorization");
 
-    if(!token){
-        res.json({
-            message:"not Authorized , please login first ", status :false
+    if (!authHeader) {
+        return res.json({
+            message: "not Authorized , please login first",
+            status: false
         });
-    } else{
+    } 
+    else {
 
-        const decoded = JsonWebTokenError.verify(token,"$/@abcd");
-        let userid = decoded.userId;
-        let finduser = await User.findOne({userid});
+        // Remove Bearer from header
+        const token = authHeader.replace("Bearer ", "");
 
-        if(!finduser){
-            res.json({ message: "User not found", status:false})
+        try {
+
+            const decoded = jwt.verify(token, "abcd1234");   // fixed verify + secret key
+
+            let userid = decoded.userId;
+
+            let finduser = await User.findById(userid);   // fixed query
+
+            if (!finduser) {
+                return res.json({
+                    message: "User not found",
+                    status: false
+                });
+            }
+
+            req.userdata = finduser;
+
+            next();
+
+        } catch (error) {
+
+            return res.json({
+                message: "Invalid Token",
+                status: false
+            });
         }
-        req.userdata = finduser;
-
-        next();
-        
     }
 
 };

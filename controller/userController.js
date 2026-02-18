@@ -1,62 +1,82 @@
 import express from "express";
-
 import mongoose from "mongoose";
-import bcrypt from 'bcryptjs';
-import {User} from './../model/user.js'
-import jwt from "jsonwebtoken"
+import bcrypt from "bcryptjs";
+import { User } from "./../model/user.js";
+import jwt from "jsonwebtoken";
 
 
+// SIGNUP
 export const signup = async (req, res) => {
 
-    const {name , email , password}= req.body;
+    const { name, email, password } = req.body;
 
-    let checkuser = await User.findOne({email});
+    let checkuser = await User.findOne({ email });
 
-    if(!checkuser){
+    if (!checkuser) {
+
         let hashPassword = await bcrypt.hash(password, 10);
+
         let user = await User.create({
             name,
             email,
-            password : hashPassword.at,
+            password: hashPassword,   // fixed here
         });
-        res.json({message:"user registration successful", status:true
 
+        return res.json({
+            message: "user registration successful",
+            status: true
         });
 
     }
-    else{
-        res.json({
-            message : " user already exist", status:true, 
+    else {
+        return res.json({
+            message: "user already exist",
+            status: false,   // fixed here
         });
     }
 
 };
 
-export const login = async(req, res) => {
 
-    const {email, password } = req.body;
+// LOGIN
+export const login = async (req, res) => {
 
+    const { email, password } = req.body;
 
-    let checkuser = await User.findOne({email});
+    let checkuser = await User.findOne({ email });
 
-    if(!checkuser){
-        res.json({
+    if (!checkuser) {
+
+        return res.json({
             message: "user not found",
-            status : false,
+            status: false,
         });
 
-    }else{
+    }
+    else {
+
         let validUser = await bcrypt.compare(password, checkuser.password);
 
-        if(validUser){
-            let token = await jwt.sign({userId:checkuser._id},"$/@abcd")
-            res.json({message:"login Successfully", status : true, token })
+        if (validUser) {
+
+            let token = await jwt.sign(
+                { userId: checkuser._id },
+                "abcd1234"   // fixed secret key format
+            );
+
+            return res.json({
+                message: "login Successfully",
+                status: true,
+                token
+            });
+
         }
-        else{
-            res.json({
-                message: "pssword is worng",
-                status : false,
-            })
+        else {
+
+            return res.json({
+                message: "password is wrong",
+                status: false,
+            });
         }
     }
 
